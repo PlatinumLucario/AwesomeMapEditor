@@ -60,27 +60,27 @@ namespace ame
     // Date of edit:   6/17/2016
     //
     ///////////////////////////////////////////////////////////
-    AMEMapView::AMEMapView(QWidget *parent)
-        : QWidget(parent),
-          m_PrimaryForeground(0),
-          m_PrimaryBackground(0),
-          m_SecondaryForeground(0),
-          m_SecondaryBackground(0),
-          m_ShowSprites(false),
-          m_MovementMode(false),
-          m_BlockView(0),
-          m_FirstBlock(QPoint(-1,-1)),
-          m_LastBlock(QPoint(-1,-1)),
-          m_HighlightedBlock(QPoint(-1,-1)),
-          m_SelectSize(QSize(1,1)),
-          m_CurrentTool(AMEMapView::Tool::None),
-          m_CursorColor(Qt::GlobalColor::green),
-          m_ShowCursor(false),
-          m_ShowGrid(false),
-          m_HoveredConnection(0),
-          m_IsInit(false)
+	AMEMapView::AMEMapView(QWidget *parent)
+		: QWidget(parent),
+		m_PrimaryForeground(0),
+		m_PrimaryBackground(0),
+		m_SecondaryForeground(0),
+		m_SecondaryBackground(0),
+		m_ShowSprites(false),
+		m_MovementMode(false),
+		m_BlockView(0),
+		m_FirstBlock(QPoint(-1, -1)),
+		m_LastBlock(QPoint(-1, -1)),
+		m_HighlightedBlock(QPoint(-1, -1)),
+		m_SelectSize(QSize(1, 1)),
+		m_CurrentTool(Cursor::Tool::None),
+		m_ShowCursor(false),
+		m_ShowGrid(false),
+		m_HoveredConnection(0),
+		m_IsInit(false),
+        m_MovePerm(QImage(":/images/PermGL.png")),
+		m_Cursor()
     {
-        m_MovePerm = QImage(":/images/PermGL.png");
     }
 
     ///////////////////////////////////////////////////////////
@@ -237,7 +237,7 @@ namespace ame
     ///////////////////////////////////////////////////////////
     void AMEMapView::setCurrentTool(AMEMapView::Tool tool)
     {
-        m_CurrentTool = tool;
+        m_CurrentTool = static_cast<Cursor::Tool>(tool);
     }
 
     ///////////////////////////////////////////////////////////
@@ -247,25 +247,25 @@ namespace ame
     // Date of edit:   10/24/2016
     //
     ///////////////////////////////////////////////////////////
-    AMEMapView::Tool AMEMapView::getCurrentTool(Qt::MouseButtons buttons)
+    Cursor::Tool AMEMapView::getCurrentTool(Qt::MouseButtons buttons)
     {
         if (buttons != Qt::NoButton)
         {
-            if (m_CurrentTool != AMEMapView::Tool::None)
+            if (m_CurrentTool != Cursor::Tool::None)
                 return m_CurrentTool;
             if (buttons & Qt::LeftButton)
-                return AMEMapView::Tool::Draw;
+                return Cursor::Tool::Draw;
             else if (buttons & Qt::RightButton)
-                return AMEMapView::Tool::Select;
+                return Cursor::Tool::Pick;
             else if (buttons & Qt::MiddleButton)
             {
                 if (QGuiApplication::keyboardModifiers() & Qt::ControlModifier)
-                    return AMEMapView::Tool::FillAll;
+                    return Cursor::Tool::FillAll;
                 else
-                    return AMEMapView::Tool::Fill;
+                    return Cursor::Tool::Fill;
             }
         }
-        return AMEMapView::Tool::None;
+        return Cursor::Tool::None;
     }
 
     ///////////////////////////////////////////////////////////
@@ -277,6 +277,21 @@ namespace ame
     ///////////////////////////////////////////////////////////
     void AMEMapView::mousePressEvent(QMouseEvent *event)
     {
+		QPoint mapCoords = event->pos();
+		mapCoords.rx() /= MAP_BLOCK_SIZE;
+		mapCoords.ry() /= MAP_BLOCK_SIZE;
+		mapCoords -= (m_MapPositions.at(0) / MAP_BLOCK_SIZE);
+
+		Cursor::Tool tool = getCurrentTool(event->button());
+
+		QRect rect = m_Cursor.mousePressEvent(mapCoords, tool);
+
+		if (!rect.isNull())
+		{
+
+			repaint();
+		}
+		/*
         int mouseX = event->pos().x();
         int mouseY = event->pos().y();
         QPoint mp = m_MapPositions.at(0);
@@ -348,6 +363,7 @@ namespace ame
 
             // Determines the moused-over block number
             m_FirstBlock = QPoint(mouseX/16, mouseY/16);
+			m_Cursor.beginPick(m_FirstBlock);
             m_LastBlock = m_FirstBlock;
             m_SelectedBlocks.clear();
             m_BlockView->deselectBlocks();
@@ -476,6 +492,7 @@ namespace ame
 
         }
         repaint();
+		*/
     }
 
     ///////////////////////////////////////////////////////////
@@ -487,7 +504,7 @@ namespace ame
     ///////////////////////////////////////////////////////////
     void AMEMapView::drawOnMousePress(QPoint pos, QVector<MapBlock> selected,int selectionWidth, int selectionHeight)
     {
-        m_CursorColor = Qt::GlobalColor::red;
+        //m_CursorColor = Qt::GlobalColor::red;
 
         for (int i = 0; i < selectionHeight; i++)
         {
@@ -567,6 +584,19 @@ namespace ame
     ///////////////////////////////////////////////////////////
     void AMEMapView::mouseReleaseEvent(QMouseEvent *event)
     {
+		QPoint mapCoords = event->pos();
+		mapCoords.rx() /= MAP_BLOCK_SIZE;
+		mapCoords.ry() /= MAP_BLOCK_SIZE;
+		mapCoords -= (m_MapPositions.at(0) / MAP_BLOCK_SIZE);
+
+		QRect rect = m_Cursor.mouseReleaseEvent(mapCoords);
+
+		//if (!rect.isNull())
+		//{
+			Cursor::Tool tool = m_Cursor.getTool();
+			repaint();
+		//}
+		/*
         m_CursorColor = Qt::GlobalColor::green;
 
         AMEMapView::Tool currentTool = getCurrentTool(event->button());
@@ -617,17 +647,34 @@ namespace ame
         }
         repaint();
         m_ValidPress = false;
+		*/
     }
 
     ///////////////////////////////////////////////////////////
     // Function type:  Virtual
-    // Contributors:   Pokedude
-    // Last edit by:   Pokedude
-    // Date of edit:   9/26/2016
+    // Contributors:   Diegoisawesome
+    // Last edit by:   Diegoisawesome
+    // Date of edit:   4/25/2017
     //
     ///////////////////////////////////////////////////////////
     void AMEMapView::mouseMoveEvent(QMouseEvent *event)
     {
+		QPoint mapCoords = event->pos();
+		mapCoords.rx() /= MAP_BLOCK_SIZE;	// needs to be done this way so rounding doesn't mess us up
+		mapCoords.ry() /= MAP_BLOCK_SIZE;
+		mapCoords -= (m_MapPositions.at(0) / MAP_BLOCK_SIZE);	// this too
+
+		QRect rect = m_Cursor.mouseMoveEvent(mapCoords);
+
+		if (!rect.isNull())
+		{
+			if (m_Cursor.getTool() == Draw)
+			{
+				m_CurrentMap.writeBlocks(rect);
+			}
+			repaint();
+		}
+		/*
         int mouseX = event->pos().x();
         int mouseY = event->pos().y();
         bool needsRepaint = false;
@@ -656,6 +703,7 @@ namespace ame
             {
                 needsRepaint = true;
                 m_LastBlock = QPoint(mX/16, mY/16);
+				m_Cursor.resizeWithAnchor(m_LastBlock, QRect(QPoint(0,0), m_MapSizes.at(0) / 16));
             }
         }
         else
@@ -673,6 +721,7 @@ namespace ame
                         if (i != m_HoveredConnection)
                         {
                             m_ShowCursor = false;
+							m_Cursor.setVisible(false);
                             m_HoveredConnection = i;
                             repaint();
                         }
@@ -687,6 +736,7 @@ namespace ame
                 if (m_ShowCursor)
                 {
                     m_ShowCursor = false;
+					m_Cursor.setVisible(false);
                     needsRepaint = true;
                 }
                 if (needsRepaint)
@@ -704,6 +754,7 @@ namespace ame
         if (m_ShowCursor != true)
         {
             m_ShowCursor = true;
+			m_Cursor.setVisible(true);
             needsRepaint = true;
         }
 
@@ -765,12 +816,14 @@ namespace ame
             else
             {
                 m_HighlightedBlock = QPoint(mX/16, mY/16);
+				m_Cursor.setPos(m_HighlightedBlock);
                 needsRepaint = true;
             }
         }
 
         if (needsRepaint)
             repaint();
+		*/
     }
 
     ///////////////////////////////////////////////////////////
@@ -804,23 +857,6 @@ namespace ame
     // Function type:  Virtual
     // Contributors:   Diegoisawesome
     // Last edit by:   Diegoisawesome
-    // Date of edit:   12/8/2016
-    //
-    ///////////////////////////////////////////////////////////
-    void AMEMapView::wheelEvent(QWheelEvent *event)
-    {
-        // TODO: Get this updating after the event, not before
-        /*QMouseEvent eve( (QEvent::MouseMove), event->pos() + event->pixelDelta(),
-                         Qt::NoButton,
-                         event->buttons(),
-                         event->modifiers()   );
-        mouseMoveEvent(&eve);*/
-    }
-
-    ///////////////////////////////////////////////////////////
-    // Function type:  Virtual
-    // Contributors:   Diegoisawesome
-    // Last edit by:   Diegoisawesome
     // Date of edit:   12/7/2016
     //
     ///////////////////////////////////////////////////////////
@@ -828,6 +864,7 @@ namespace ame
     {
         Q_UNUSED(event);
         m_ShowCursor = false;
+		m_Cursor.setVisible(false);
         m_HoveredConnection = 0;
 
         repaint();
@@ -895,6 +932,7 @@ namespace ame
         m_MapPositions.push_back(QPoint(0, 0));
         m_WidgetSize = QSize(m_MapSizes.at(0));
 
+		m_Cursor.setBounds(QRect(QPoint(0, 0), mainSize));
 
         // Calculates the positions for the maps
         int biggestLeftMap = 0; // width of the biggest left-connected map
@@ -1774,9 +1812,19 @@ namespace ame
     ///////////////////////////////////////////////////////////
     void AMEMapView::paintEvent(QPaintEvent *event)
     {
+        Q_UNUSED(event);
+
         if (m_IsInit)
         {
-            Q_UNUSED(event);
+			/*QPoint mapCoords = mapFromGlobal(QCursor::pos());	// this is meant to catch scrolls and other jumps
+			mapCoords.rx() /= MAP_BLOCK_SIZE;					// but the painter is limited to painting the new area
+			mapCoords.ry() /= MAP_BLOCK_SIZE;
+			mapCoords -= (m_MapPositions.at(0) / MAP_BLOCK_SIZE);
+
+
+			QRect result = m_Cursor.mouseMoveEvent(mapCoords);*/
+
+
             QPoint pmain = mainPos();
             QPainter painter(this);
             painter.drawPixmap(pmain.x(), pmain.y(), m_MapBackground);
@@ -1822,7 +1870,7 @@ namespace ame
                 painter.setPen(Qt::GlobalColor::black);
                 painter.drawLines(lines);
             }
-            if (m_ShowCursor)
+            /*if (m_ShowCursor)
             {
                 int mapWidth = m_MapSizes.at(0).width() / 16;
                 int x = 0, y = 0, sWid = 1, sHei = 1;
@@ -1916,7 +1964,8 @@ namespace ame
 
                 painter.setPen(m_CursorColor);
                 painter.drawRect(x, y, sWid, sHei);
-            }
+            }*/
+			m_Cursor.paintEvent(event, painter, QRect(m_MapPositions.at(0), m_MapSizes.at(0)));
             if (m_HoveredConnection != 0)
             {
                 QRect connRect = QRect(m_MapPositions.at(m_HoveredConnection), m_MapSizes.at(m_HoveredConnection) + QSize(-1,-1));
@@ -2104,13 +2153,16 @@ namespace ame
     // Function type:  Setter
     // Contributors:   Diegoisawesome
     // Last edit by:   Diegoisawesome
-    // Date of edit:   11/9/2016
+    // Date of edit:   4/25/2017
     //
     ///////////////////////////////////////////////////////////
     void AMEMapView::setGridVisible(bool visible)
     {
-        m_ShowGrid = visible;
-        repaint();
+		if (m_ShowGrid != visible)
+		{
+			m_ShowGrid = visible;
+			repaint();
+		}
     }
 
     ///////////////////////////////////////////////////////////
@@ -2125,4 +2177,15 @@ namespace ame
         m_MPListener = listener;
     }
 
+	///////////////////////////////////////////////////////////
+	// Function type:  Setter
+	// Contributors:   Diegoisawesome
+	// Last edit by:   Diegoisawesome
+	// Date of edit:   4/25/2017
+	//
+	///////////////////////////////////////////////////////////
+	void AMEMapView::setBlockManager(MapBlockManager *manager)
+	{
+		m_BlockManager = manager;
+	}
 }

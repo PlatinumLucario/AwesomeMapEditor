@@ -35,3 +35,9 @@ Makefile*
 
 # Compiled files
 bin/
+
+# Visual Studio files
+.vs/
+/*.vcxproj*
+/*_resource.*
+*.sln

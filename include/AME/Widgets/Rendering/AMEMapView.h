@@ -44,6 +44,8 @@
 #include <QRgb>
 #include <AME/System/LoadedData.hpp>
 #include <AME/Widgets/Listeners/MovePermissionListener.h>
+#include <AME/Widgets/Rendering/Cursor.hpp>
+#include <AME/Mapping/CurrentMapManager.hpp>
 
 
 namespace ame
@@ -202,7 +204,7 @@ namespace ame
         /// \brief Retrieves the current editing tool.
         ///
         ///////////////////////////////////////////////////////////
-        AMEMapView::Tool getCurrentTool(Qt::MouseButtons buttons);
+        Cursor::Tool getCurrentTool(Qt::MouseButtons buttons);
 
         ///////////////////////////////////////////////////////////
         /// \brief Sets the current editing tool from the UI.
@@ -234,7 +236,11 @@ namespace ame
         ///////////////////////////////////////////////////////////
         void setMPListener(MovePermissionListener *listener);
 
-
+		///////////////////////////////////////////////////////////
+		/// \brief Sets the associated map block manager object.
+		///
+		///////////////////////////////////////////////////////////
+		void setBlockManager(CurrentMapManager *manager);
 
     protected:
 
@@ -267,12 +273,6 @@ namespace ame
         ///
         ///////////////////////////////////////////////////////////
         void leaveEvent(QEvent *event);
-
-        ///////////////////////////////////////////////////////////
-        /// \brief Overrides the mouse wheel event.
-        ///
-        ///////////////////////////////////////////////////////////
-        void wheelEvent(QWheelEvent *event);
 
         ///////////////////////////////////////////////////////////
         /// \brief Paints the map image.
@@ -330,14 +330,15 @@ namespace ame
         QPoint m_LastBlock;
         QPoint m_HighlightedBlock;
         QSize m_SelectSize;
-        AMEMapView::Tool m_CurrentTool;
+        Cursor::Tool m_CurrentTool;
         QImage m_MovePerm;
-        QColor m_CursorColor;
         Boolean m_ShowCursor;
         Boolean m_ShowGrid;
         Boolean m_IsInit;
         Boolean m_ValidPress;
         Int32 m_HoveredConnection;
+		Cursor m_Cursor;
+        CurrentMapManager m_CurrentMap;
     };
 }
 
