@@ -41,7 +41,7 @@ So your directories should look somewhat like this:
 
 2. Build them all, working forwards from yaml-cpp to QBoy to AME itself.
 
-3. Copy the `../[AMEroot]/AwesomeMapEditor/resources/config` folder into the AME executable directory (usually named `build-AwesomeMapEditor-Desktop_Qt_[version-number]_[kit-used]_64bit-[debug-or-release]`.
+3. Copy the `../[AMEroot]/AwesomeMapEditor/resources/config` folder into the AME executable directory (usually named `build-AwesomeMapEditor-Desktop_Qt_[version-number]_[kit-used]_64bit-[debug-or-release]`).
 
 Now you can help us develop the future of Pokémon ROM hacking!
 
