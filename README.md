@@ -37,7 +37,7 @@ So your directories should look somewhat like this:
 
 #### Building AME
 
-1. Open all the projects in Qt and set QBoy build directories to `../[AMEroot]/QBoy/bin/debug` and `../[AMEroot]/QBoy/bin/release` respectively and set yaml-cpp build directory to `../[AMEroot]/yaml-cpp/bin`. For yaml-cpp, open the `CMakeLists.txt` file and ensure BUILD_SHARED_LIBS is enabled in its project settings.
+1. Open all the projects in Qt and set QBoy build directories to `../[AMEroot]/QBoy/bin/debug` and</br>`../[AMEroot]/QBoy/bin/release` respectively and set yaml-cpp build directory to `../[AMEroot]/yaml-cpp/bin`. For yaml-cpp, open the `CMakeLists.txt` file and ensure BUILD_SHARED_LIBS is enabled in its project settings.
 
 2. Build them all, working forwards from yaml-cpp to QBoy to AME itself.
 
